@@ -1,3 +1,0 @@
-1. Construct data extractor from model files.
-   a. Each row is a model in BIOMODELS
-   b. Number of: reactions, parameters, ..
