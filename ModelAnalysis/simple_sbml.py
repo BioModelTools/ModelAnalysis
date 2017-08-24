@@ -3,6 +3,7 @@ Provides simplified, read-only access to an SBML model.
 """
 import sys
 import os.path
+import tellurium as te  # Must import tellurium before libsbml
 import libsbml
 
 
@@ -11,14 +12,21 @@ class SimpleSBML(object):
   Provides access to reactions, species, and parameters.
   """
 
-  def __init__(self, filename):
+  def __init__(self, filename=None, sbmlstr=None):
     """
     :param str filename: File containing the SBML document
+    :param str sbmlstr: String containing the SBML document
     :raises IOError: Error encountered reading the SBML document
+    :raises ValueError: if filename and sbmlstr are both None
     """
-    self._filename = filename
     self._reader = libsbml.SBMLReader()
-    self._document = self._reader.readSBML(self._filename)
+    if filename is not None:
+      self._filename = filename
+      self._document = self._reader.readSBML(self._filename)
+    elif sbmlstr is not None:
+      self._document = self._reader.readSBMLFromString(sbmlstr)
+    else:
+      raise ValueError("Must have an SBML source!")
     if (self._document.getNumErrors() > 0):
       raise IOError("Errors in SBML document\n%s" 
           % self._document.printErrors())
@@ -26,6 +34,15 @@ class SimpleSBML(object):
     self._reactions = self._getReactions()
     self._parameters = self._getParameters()  # dict with key=name
     self._species = self._getSpecies()  # dict with key=name
+
+  @classmethod
+  def getSBMLForBiomodel(cls, biomodel_id):
+    """
+    Obtains SBML for the the Biomodel.
+    :param str biomodel_id:
+    """
+    url = "http://www.ebi.ac.uk/biomodels-main/download?mid=%s" % biomodel_id
+    return te.loadSBMLModel(url).getSBML()
 
   def _getSpecies(self):
     speciess = {}
