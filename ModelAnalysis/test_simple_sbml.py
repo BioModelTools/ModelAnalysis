@@ -21,7 +21,7 @@ BIOMODEL = "BIOMD0000000200"
 class TestSimpleSBML(unittest.TestCase):
 
   def setUp(self):
-    self.ssbml = SimpleSBML(filename=TEST_FILE)
+    self.ssbml = SimpleSBML(filepath=TEST_FILE)
 
   def testConstructorWithFile(self):
     if IGNORE_TEST:

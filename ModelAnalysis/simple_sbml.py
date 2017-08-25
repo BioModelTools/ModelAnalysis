@@ -12,17 +12,17 @@ class SimpleSBML(object):
   Provides access to reactions, species, and parameters.
   """
 
-  def __init__(self, filename=None, sbmlstr=None):
+  def __init__(self, filepath=None, sbmlstr=None):
     """
-    :param str filename: File containing the SBML document
+    :param str filepath: File containing the SBML document
     :param str sbmlstr: String containing the SBML document
     :raises IOError: Error encountered reading the SBML document
-    :raises ValueError: if filename and sbmlstr are both None
+    :raises ValueError: if filepath and sbmlstr are both None
     """
     self._reader = libsbml.SBMLReader()
-    if filename is not None:
-      self._filename = filename
-      self._document = self._reader.readSBML(self._filename)
+    if filepath is not None:
+      self._filepath = filepath
+      self._document = self._reader.readSBML(self._filepath)
     elif sbmlstr is not None:
       self._document = self._reader.readSBMLFromString(sbmlstr)
     else:

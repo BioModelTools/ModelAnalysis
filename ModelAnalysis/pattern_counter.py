@@ -1,7 +1,7 @@
 """
 Classes that count patterns in SBML models
 """
-from simple_sbml import SimpleSbml
+from simple_sbml import SimpleSBML
 import re
 import sys
 import os.path
@@ -10,7 +10,7 @@ import pandas as pd
 ################################################
 # Classes that count pattern occurrences
 ################################################
-class PatternCounter(object)
+class PatternCounter(object):
   """
   Abstract class for counting patterns.
   Defines the interface and establishes the instance variables.
@@ -18,7 +18,7 @@ class PatternCounter(object)
 
   def __init__(self, ssbml, pattern_cls):
     """
-    :param SimpleSbml ssbml: for model to count pattern
+    :param SimpleSBML ssbml: for model to count pattern
     :param ModelPattern model_pattern:
     """
     self._ssbml = ssbml
@@ -51,7 +51,8 @@ class ReactionPatternCounter(PatternCounter):
     pattern_count = 0
     for reaction in self._reactions:
       model_pattern = self._pattern_cls(reaction)
-      pattern_count += 1 if model_patter.isPattern()
+      if model_pattern.isPattern():
+        pattern_count += 1
     return pattern_count, reaction_count
 
 
@@ -62,7 +63,35 @@ class ModelPattern(object):
   """
   Abstract class for a pattern
   """
-  pass
+
+  @staticmethod
+  def _jointSubstring(substrings, string):
+    """
+    Calculates the number of non-overlapping substrings in string.
+    The approach is heuristic and so will not always find the maximum
+    number of substrings.
+    :param list-of-str substrings:
+    :param str string:
+    :return int: Number of non-overlapping substrings present
+    """
+    ranges = []  # Positions for reactants in product
+    for substring in substrings:
+      pos = string.find(substring)
+      if pos >= 0:
+        ranges.append(range(pos, len(substring)))
+    result = 0
+    if len(ranges) > 0:
+      result = 1
+      last_range = set(ranges[0])
+      for rng in ranges[1:]:
+        combined_range = last_range.union(set(rng))
+        if len(combined_range) == len(last_range) + len(rng):
+          result += 1
+          last_range = combined_range
+    return result
+
+  def isPattern(self):
+    raise RuntimeError("Must override")
 
 
 class ReactionPattern(ModelPattern):
@@ -84,7 +113,7 @@ class ReactionPattern(ModelPattern):
     result = []
     for idx in range(raction.getNumReactants()):
       reactant = reaction.getProduct(idx)
-      result.append(reactant.getSpecies()))
+      result.append(reactant.getSpecies())
     return result
 
   def _getProducts(self):
@@ -94,37 +123,8 @@ class ReactionPattern(ModelPattern):
     result = []
     for idx in range(raction.getNumProducts()):
       reactant = reaction.getProduct(idx)
-      result.append(reactant.getSpecies()))
+      result.append(reactant.getSpecies())
     return result
-
-  def _jointSubstring(substrings, string):
-    """
-    Calculates the number of non-overlapping substrings in string.
-    The approach is heuristic and so will not always find the maximum
-    number of substrings.
-    :param list-of-str substrings:
-    :param str string:
-    :return int: Number of non-overlapping substrings present
-    """
-    ranges = []  # Positions for reactants in product
-    for substring in substrings:
-      pos = string.find(substring)
-      if pos >= 0:
-      ranges.append(range(pos, len(substring)))
-    result = 0
-    if len(ranges) > 0:
-      result = 1
-      last_range = set(ranges[0])
-      for rng in ranges[1:]:
-        combined_range = last_range.union(set(rng))
-        if len(combined_range) == len(last_range) + len(rng):
-          result += 1
-          last_range = combined_range
-    return result
-       
-
-  def isPattern(self):
-    raise RuntimeError("Must override")
 
 
 class ComplexFormationReactionPattern(ReactionPattern):
@@ -133,18 +133,19 @@ class ComplexFormationReactionPattern(ReactionPattern):
   of the product.
   """
 
-  def isPattern(self)
+  def isPattern(self):
     """
     Looks for a combination of the reactants in a product.
     :param libsbml.Reaction:
     :return bool: True if the pattern is present
     """
+    cls = ComplexFormationReactionPattern
     reactants = self._getReactants()
     products = self._getProducts()
     result = False
     if len(reactants) > 1 and len(products) > 0:
       for product in products:
-        if self._jointSubstring(reactants, product) > 1:
+        if cls._jointSubstring(reactants, product) > 1:
           result = True
           break
     return result
@@ -155,7 +156,7 @@ class ComplexDisassociationReactionPattern(ReactionPattern):
   Tests if one or more reactants are decomposed into products
   """
 
-  def isPattern(self)
+  def isPattern(self):
     """
     Looks for a combination of the product in a reactant.
     :param libsbml.Reaction:
