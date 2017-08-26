@@ -44,6 +44,7 @@
 
 import sys
 import os.path
+from simple_sbml import SimpleSBML
 from libsbml import *
 
 def printFunctionDefinition(n, fd):
@@ -89,7 +90,6 @@ def printReactionMath(n, r):
           formula = formulaToString(kl.getMath());
           print("Reaction " + str(n) + ", formula: " + formula + "\n");
 
-
 def printEventAssignmentMath(n, ea):
   if (ea.isSetMath()):
       variable = ea.getVariable();
@@ -111,6 +111,12 @@ def printEventMath(n, e):
       printEventAssignmentMath(i + 1, e.getEventAssignment(i));
 
   print;
+
+def printReactions(model, ssbml):
+
+  for n in range(0, model.getNumReactions()):
+      print "%s\n"  \
+          % ssbml.getReactionString(model.getReaction(n))
 
 def printMath(m):
   for n in range(0,m.getNumFunctionDefinitions()):
@@ -138,6 +144,7 @@ def main (args):
   
   filename = args[1];
   document = readSBML(filename);
+  ssbml = SimpleSBML(filename)
   
   if (document.getNumErrors() > 0):
       print("Encountered the following SBML errors:" + "\n");
@@ -151,8 +158,10 @@ def main (args):
       print("No model present." + "\n");
       return 1;
   
-  printMath(model);
+  #printMath(model);
+  printReactions(model, ssbml)
   print;
+
   return 0;
 
 if __name__ == '__main__':

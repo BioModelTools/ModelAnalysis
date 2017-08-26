@@ -58,6 +58,18 @@ class TestPatterns(unittest.TestCase):
     self._testJointSubstring(["xx", "yy"], "xx_yy", 2)
     self._testJointSubstring(["xxy", "y"], "xx_yy", 1)
     self._testJointSubstring(["xx", "yy", "zz"], "zzz_xx_yy", 3)
+
+  def testGetReactants(self):
+    raise RuntimeError("Not yet implemented")
+
+  def testGetProducts(self):
+    raise RuntimeError("Not yet implemented")
+
+  def testComplexFormationReactionPattern(self):
+    raise RuntimeError("Not yet implemented")
+
+  def testComplexDisassociationReactionPattern(self):
+    raise RuntimeError("Not yet implemented")
    
 
 

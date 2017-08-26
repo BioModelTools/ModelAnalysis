@@ -15,6 +15,7 @@ This project provides the following statistics for each model:
 - Numer of reactions
 - Mean, Std of # reactions per reaction
 - Mean, Std of # products per reaction
+- Fraction of constants for which units are specified
 - Fraction of kinetics that are classified as:
   - Mass action
   - Michaelis Menten

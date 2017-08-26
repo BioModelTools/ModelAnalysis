@@ -92,22 +92,22 @@ class SimpleSBML(object):
     """
     return [reaction.getProduct(n) for n in range(reaction.getNumProducts())]
 
-  @classmethod
-  def getReactionString(cls, reaction):
+  def getReactionString(self, reaction):
     """
     Provides a string representation of the reaction
     :param libsbml.Reaction reaction:
     """
+    cls = SimpleSBML
     reaction_str = ''
     base_length = len(reaction_str)
-    for reference in etReactants(reaction):
+    for reference in self.getReactants(reaction):
       if len(reaction_str) > base_length:
         reaction_str += " + " + reference.species
       else:
         reaction_str += reference.species
     reaction_str += "-> "
     base_length = len(reaction_str)
-    for reference in getProducts(reaction):
+    for reference in self.getProducts(reaction):
       if len(reaction_str) > base_length:
         reaction_str += " + " + reference.species
       else:
