@@ -2,6 +2,7 @@
 Tests for PatternCounter
 """
 import unittest
+from util import createSBML
 import numpy as np
 from pattern_counter import PatternCounter, ReactionPatternCounter,  \
     ModelPattern, ReactionPattern, ComplexFormationReactionPattern,  \
@@ -60,15 +61,31 @@ class TestPatterns(unittest.TestCase):
     self._testJointSubstring(["xx", "yy", "zz"], "zzz_xx_yy", 3)
 
   def testGetReactants(self):
-    raise RuntimeError("Not yet implemented")
+    reactants = ["S1", "S2"]
+    antimony = "%s + %s -> S3; 1" % (reactants[0], reactants[1])
+    sbmlstr = createSBML(antimony)
+    ssbml = SimpleSBML(sbmlstr=sbmlstr)
+    reaction = ssbml.getReactions()[0]
+    pattern = ReactionPattern(reaction)
+    result = pattern._getReactants()
+    self.assertEqual(set(result), set(reactants))
 
   def testGetProducts(self):
-    raise RuntimeError("Not yet implemented")
+    products = ["S1", "S2"]
+    antimony = "S3 -> %s + %s; 1" % (products[0], products[1])
+    sbmlstr = createSBML(antimony)
+    ssbml = SimpleSBML(sbmlstr=sbmlstr)
+    reaction = ssbml.getReactions()[0]
+    pattern = ReactionPattern(reaction)
+    result = pattern._getProducts()
+    self.assertEqual(set(result), set(products))
 
   def testComplexFormationReactionPattern(self):
+    return
     raise RuntimeError("Not yet implemented")
 
   def testComplexDisassociationReactionPattern(self):
+    return
     raise RuntimeError("Not yet implemented")
    
 

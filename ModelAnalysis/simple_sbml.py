@@ -12,10 +12,13 @@ class SimpleSBML(object):
   Provides access to reactions, species, and parameters.
   """
 
-  def __init__(self, filepath=None, sbmlstr=None):
+  def __init__(self, filepath=None, sbmlstr=None, 
+       is_ignore_errors=False):
     """
     :param str filepath: File containing the SBML document
     :param str sbmlstr: String containing the SBML document
+    :param bool isIgnoreErrors: Do not return raise an exception
+        if there are errors in the document
     :raises IOError: Error encountered reading the SBML document
     :raises ValueError: if filepath and sbmlstr are both None
     """
@@ -27,7 +30,7 @@ class SimpleSBML(object):
       self._document = self._reader.readSBMLFromString(sbmlstr)
     else:
       raise ValueError("Must have an SBML source!")
-    if (self._document.getNumErrors() > 0):
+    if (self._document.getNumErrors() > 0) and not is_ignore_errors:
       raise IOError("Errors in SBML document\n%s" 
           % self._document.printErrors())
     self._model = self._document.getModel()

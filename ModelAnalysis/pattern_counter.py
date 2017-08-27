@@ -111,8 +111,8 @@ class ReactionPattern(ModelPattern):
     :return list-of-str:
     """
     result = []
-    for idx in range(raction.getNumReactants()):
-      reactant = reaction.getProduct(idx)
+    for idx in range(self._reaction.getNumReactants()):
+      reactant = self._reaction.getReactant(idx)
       result.append(reactant.getSpecies())
     return result
 
@@ -121,8 +121,8 @@ class ReactionPattern(ModelPattern):
     :return list-of-str:
     """
     result = []
-    for idx in range(raction.getNumProducts()):
-      reactant = reaction.getProduct(idx)
+    for idx in range(self._reaction.getNumProducts()):
+      reactant = self._reaction.getProduct(idx)
       result.append(reactant.getSpecies())
     return result
 
