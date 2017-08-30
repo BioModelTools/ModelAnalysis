@@ -1,5 +1,8 @@
 """
-Classes that count patterns in SBML models
+Classes that count patterns in SBML models.
+Usage:
+   pattern = XPattern(ssbml)
+   pattern_count, total_count = pattern.run()
 """
 from simple_sbml import SimpleSBML
 import re
@@ -13,56 +16,26 @@ import pandas as pd
 class PatternCounter(object):
   """
   Abstract class for counting patterns.
-  Defines the interface and establishes the instance variables.
+  At the top of the class hierarchy are "Counter" classes that
+  count occurrences of a pattern. "Recognizer" classes inherit
+  from counter classes.
   """
 
-  def __init__(self, ssbml, pattern_cls):
+  def __init__(self, ssbml):
     """
     :param SimpleSBML ssbml: for model to count pattern
     :param ModelPattern model_pattern:
     """
     self._ssbml = ssbml
-    self._pattern_cls = pattern_cls
 
   def run(self):
     """
     Count the pattern for this model.
+    Must be overridden by another "Counter" class.
     :return int, int: 
         count of pattern occurrences, count of cases tested
     """
     raise RuntimeError("Not implemented. Must override.")
-
-
-class ReactionPatternCounter(PatternCounter):
-  """
-  Abstract class for counting patterns in reactions.
-  Handles the iteration.
-  model_pattern must be a ReactionPattern
-  """
-
-  def run(self):
-    """
-    Count the pattern for this model.
-    :return int, int: 
-        count of pattern occurrences, count of cases tested
-    """
-    self._reactions = self._ssbml.getReactions()
-    reaction_count = len(self._reactions)
-    pattern_count = 0
-    for reaction in self._reactions:
-      model_pattern = self._pattern_cls(reaction)
-      if model_pattern.isPattern():
-        pattern_count += 1
-    return pattern_count, reaction_count
-
-
-################################################
-# Classes that check for a pattern's presence
-################################################
-class ModelPattern(object):
-  """
-  Abstract class for a pattern
-  """
 
   @staticmethod
   def _jointSubstring(substrings, string):
@@ -94,54 +67,48 @@ class ModelPattern(object):
     raise RuntimeError("Must override")
 
 
-class ReactionPattern(ModelPattern):
+class ReactionPatternCounter(PatternCounter):
   """
-  Abstract class for patterns in reactions.
-  Contains common code used for pattern analysis.
+  Abstract class for counting patterns in reactions.
+  Handles the iteration.
+  model_pattern must be a ReactionPattern
   """
 
-  def __init__(self, reaction):
+  def run(self):
     """
-    :param libsbml.Reaction reaction:
+    Count the pattern for this model.
+    :return int, int: 
+        count of pattern occurrences, count of cases tested
     """
-    self._reaction = reaction
-
-  def _getReactants(self):
-    """
-    :return list-of-str:
-    """
-    result = []
-    for idx in range(self._reaction.getNumReactants()):
-      reactant = self._reaction.getReactant(idx)
-      result.append(reactant.getSpecies())
-    return result
-
-  def _getProducts(self):
-    """
-    :return list-of-str:
-    """
-    result = []
-    for idx in range(self._reaction.getNumProducts()):
-      reactant = self._reaction.getProduct(idx)
-      result.append(reactant.getSpecies())
-    return result
+    indicies = self._ssbml.getReactionIndicies()
+    reaction_count = len(indicies)
+    pattern_count = 0
+    for idx in indicies:
+      if self.isPattern(idx):
+        pattern_count += 1
+    return pattern_count, reaction_count
 
 
-class ComplexFormationReactionPattern(ReactionPattern):
+################################################
+# Classes that recognize patterns
+################################################
+class ComplexFormationReactionPattern(ReactionPatternCounter):
   """
   Tests if the reactants are combined in a way to be a substring
   of the product.
   """
 
-  def isPattern(self):
+  def isPattern(self, reaction_idx):
     """
     Looks for a combination of the reactants in a product.
-    :param libsbml.Reaction:
+    :param int reaction_idx:
     :return bool: True if the pattern is present
     """
     cls = ComplexFormationReactionPattern
-    reactants = self._getReactants()
-    products = self._getProducts()
+    reactants = [r.getSpecies() for
+                 r in self._ssbml.getReactants(reaction_idx)]
+    products = [p.getSpecies() for
+                 p in self._ssbml.getProducts(reaction_idx)]
     result = False
     if len(reactants) > 1 and len(products) > 0:
       for product in products:
@@ -151,25 +118,26 @@ class ComplexFormationReactionPattern(ReactionPattern):
     return result
 
 
-class ComplexDisassociationReactionPattern(ReactionPattern):
+class ComplexDisassociationReactionPattern(ReactionPatternCounter):
   """
   Tests if one or more reactants are decomposed into products
   """
 
-  def isPattern(self):
+  def isPattern(self, reaction_idx):
     """
     Looks for a combination of the product in a reactant.
-    :param libsbml.Reaction:
+    :param int reaction_idx:
     :return bool: True if the pattern is present
     """
-    reactants = self._getReactants()
-    products = self._getProducts()
+    reactants = [r.getSpecies() for
+                 r in self._ssbml.getReactants(reaction_idx)]
+    products = [p.getSpecies() for
+                 p in self._ssbml.getProducts(reaction_idx)]
     result = False
-    if len(products) > 1 and len(reactants) > 0:
-      for reactant in reactants:
-        if self._jointSubstring(products, reactant) > 1:
-          result = True
-          break
+    for reactant in reactants:
+      if self._jointSubstring(products, reactant) > 1:
+        result = True
+        break
     return result
 
 

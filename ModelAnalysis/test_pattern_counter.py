@@ -1,21 +1,20 @@
 """
 Tests for PatternCounter
 """
-import unittest
-from util import createSBML
 import numpy as np
 from pattern_counter import PatternCounter, ReactionPatternCounter,  \
-    ModelPattern, ReactionPattern, ComplexFormationReactionPattern,  \
-    ComplexDisassociationReactionPattern
+    ComplexFormationReactionPattern, ComplexDisassociationReactionPattern
 from simple_sbml import SimpleSBML
+#from util import createSBML, createReaction
+import unittest
 
 
 IGNORE_TEST = False
 TEST_FILE = "chemotaxis.xml"
 
 
-class DummyReactionPattern(ReactionPattern):
-  def isPattern(self):
+class DummyReactionPattern(ReactionPatternCounter):
+  def isPattern(self, idx):
     return True
 
 
@@ -30,13 +29,13 @@ class TestCounterClasses(unittest.TestCase):
   def testPatternCounter(self):
     if IGNORE_TEST:
       return
-    counter = PatternCounter(self.ssbml, ModelPattern)
-    self.assertEqual(counter._pattern_cls,ModelPattern)
+    counter = DummyReactionPattern(self.ssbml)
+    self.assertIsNotNone(counter._ssbml)
 
   def testReactionPatternCounter(self):
     if IGNORE_TEST:
       return
-    counter = ReactionPatternCounter(self.ssbml, DummyReactionPattern)
+    counter = DummyReactionPattern(self.ssbml)
     reaction_count, pattern_count = counter.run()
     self.assertEqual(reaction_count, pattern_count)
 
@@ -49,46 +48,53 @@ class TestPatterns(unittest.TestCase):
     self.ssbml = SimpleSBML(filepath=TEST_FILE)
 
   def _testJointSubstring(self, substrings, string, expected):
-    result = ModelPattern._jointSubstring(substrings, string)
+    result = PatternCounter._jointSubstring(substrings, string)
     self.assertEqual(result, expected)
     substrings.reverse()
-    result = ModelPattern._jointSubstring(substrings, string)
+    result = PatternCounter._jointSubstring(substrings, string)
     self.assertEqual(result, expected)
 
   def testJointSubstring(self):
+    if IGNORE_TEST:
+      return
     self._testJointSubstring(["xx", "yy"], "xx_yy", 2)
     self._testJointSubstring(["xxy", "y"], "xx_yy", 1)
     self._testJointSubstring(["xx", "yy", "zz"], "zzz_xx_yy", 3)
 
-  def testGetReactants(self):
-    reactants = ["S1", "S2"]
-    antimony = "%s + %s -> S3; 1" % (reactants[0], reactants[1])
-    sbmlstr = createSBML(antimony)
-    ssbml = SimpleSBML(sbmlstr=sbmlstr)
-    reaction = ssbml.getReactions()[0]
-    pattern = ReactionPattern(reaction)
-    result = pattern._getReactants()
-    self.assertEqual(set(result), set(reactants))
-
-  def testGetProducts(self):
-    products = ["S1", "S2"]
-    antimony = "S3 -> %s + %s; 1" % (products[0], products[1])
-    sbmlstr = createSBML(antimony)
-    ssbml = SimpleSBML(sbmlstr=sbmlstr)
-    reaction = ssbml.getReactions()[0]
-    pattern = ReactionPattern(reaction)
-    result = pattern._getProducts()
-    self.assertEqual(set(result), set(products))
+  def _testFormationPattern(self, 
+        reactants, products, expected_result):
+    ssbmlstr = SimpleSBML.createSBMLReaction(reactants, products)
+    ssbml = SimpleSBML(sbmlstr=ssbmlstr)
+    complex = ComplexFormationReactionPattern(ssbml)
+    self.assertEqual(complex.isPattern(0), expected_result)
 
   def testComplexFormationReactionPattern(self):
-    return
-    raise RuntimeError("Not yet implemented")
+    if IGNORE_TEST:
+      return
+    self._testFormationPattern(["A", "B"], ["AB"], True)
+    self._testFormationPattern(["B", "A"], ["AB"], True)
+    self._testFormationPattern(["A", "C"], ["AB"], False)
+    self._testFormationPattern(["A", "C", "B"], ["AB"], True)
+    self._testFormationPattern(["A", "B"], ["A_B"], True)
+    self._testFormationPattern(["B", "A"], ["A_B"], True)
+
+  def _testDisassociatePattern(self, 
+        reactants, products, expected_result):
+    ssbmlstr = SimpleSBML.createSBMLReaction(reactants, products)
+    ssbml = SimpleSBML(sbmlstr=ssbmlstr)
+    complex = ComplexDisassociationReactionPattern(ssbml)
+    self.assertEqual(complex.isPattern(0), expected_result)
 
   def testComplexDisassociationReactionPattern(self):
-    return
-    raise RuntimeError("Not yet implemented")
+    if IGNORE_TEST:
+      return
+    self._testDisassociatePattern(["AB"], ["B", "A"], True)
+    self._testDisassociatePattern(["AB"], ["A", "B"], True)
+    self._testDisassociatePattern(["AB"], ["A", "C"], False)
+    self._testDisassociatePattern(["AB"], ["A", "C", "B"], True)
+    self._testDisassociatePattern(["A_B"], ["A", "B"], True)
+    self._testDisassociatePattern(["A_B"], ["B", "A"], True)
    
-
 
 if __name__ == '__main__':
   unittest.main()

@@ -1,5 +1,9 @@
 """
 Provides simplified, read-only access to an SBML model.
+Notes:
+  Because of an apparent bug in libsbml, we cannot
+  pass a libsbml object across subroutine calls. SimpleSBML
+  provides the interface to libsbml.
 """
 import sys
 import os.path
@@ -76,16 +80,34 @@ class SimpleSBML(object):
   def getReactions(self):
     return self._reactions
 
+  def getReactionIndicies(self):
+    return range(self._model.getNumReactions())
+
+  def getParameterNames(self):
+    return self._parameters.keys()
+
   def getParameters(self):
     return self._parameters.values()
 
+  def _coerceToReaction(self, reaction_or_int):
+    """
+    :param libsbml.Reaction or int reaction_or_int:
+    :return libsbml.Reaction:
+    """
+    if isinstance(reaction_or_int, int):
+      reaction = self._model.getReaction(reaction_or_int)
+    else:
+      reaction = reaction_or_int
+    return reaction
+
   def getReactants(self, reaction):
     """
-    :param libsbml.Reaction:
+    :param libsbml.Reaction or int:
     :return list-of-libsbml.SpeciesReference:
     To get the species name: SpeciesReference.species
     To get stoichiometry: SpeciesReference.getStoichiometry
     """
+    reaction = self._coerceToReaction(reaction)
     return [reaction.getReactant(n) for n in range(reaction.getNumReactants())]
 
   def getProducts(self, reaction):
@@ -93,6 +115,7 @@ class SimpleSBML(object):
     :param libsbml.Reaction:
     :return list-of-libsbml.SpeciesReference:
     """
+    reaction = self._coerceToReaction(reaction)
     return [reaction.getProduct(n) for n in range(reaction.getNumProducts())]
 
   def getReactionString(self, reaction):
@@ -100,6 +123,7 @@ class SimpleSBML(object):
     Provides a string representation of the reaction
     :param libsbml.Reaction reaction:
     """
+    reaction = self._coerceToReaction(reaction)
     cls = SimpleSBML
     reaction_str = ''
     base_length = len(reaction_str)
@@ -126,6 +150,7 @@ class SimpleSBML(object):
     :param libsbml.Reaction
     :return list-of-str: names of the terms
     """
+    reaction = self._coerceToReaction(reaction)
     terms = []
     law = reaction.getKineticLaw()
     if law is not None:
@@ -153,6 +178,35 @@ class SimpleSBML(object):
     Determines if the name is a parameter
     """
     return self._parameters.has_key(name)
+
+  @staticmethod
+  # Create an SBML file from an antimony string
+  def createSBML(antimony_str):
+    """
+    :param str antimony_str: antimony model
+    :return str SBML:
+    """
+    rr = te.loada(antimony_str)
+    return rr.getSBML()
+  
+  @staticmethod
+  # Creates a reaction
+  def createSBMLReaction(reactants, products):
+    """
+    :param list-of-str reactants:
+    :param list-of-str products:
+    :return str SBML:
+    """
+    antimony_str = " + ".join(reactants)
+    antimony_str += " -> "
+    antimony_str += " + ".join(products) + "; 1" 
+    species = list(reactants)
+    species.extend(products)
+    for spc in species:
+      new_str = "\n%s = 1;" % spc
+      antimony_str += new_str
+    sbmlstr = SimpleSBML.createSBML(antimony_str)
+    return sbmlstr
 
 
 if __name__ == '__main__':
