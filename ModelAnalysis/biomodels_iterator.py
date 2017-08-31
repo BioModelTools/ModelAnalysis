@@ -13,7 +13,8 @@ class BiomodelsIterator(object):
   def __init__(self, path):
     """
     :param str path: path to a file containing a list of BioModels to process
-      The file should contain a list of BioModels identifiers.
+      The file should contain a list of BioModels identifiers,
+      one per line.
     """
     self._path = path
     self._idx = 0
