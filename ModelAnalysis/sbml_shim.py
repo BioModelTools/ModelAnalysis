@@ -41,15 +41,20 @@ class SBMLShim(object):
     self._reactions = self._getReactions()
     self._parameters = self._getParameters()  # dict with key=name
     self._species = self._getSpecies()  # dict with key=name
+    self._biomodel_id = None
 
   @classmethod
-  def getSBMLForBiomodel(cls, biomodel_id):
+  def getShimForBiomodel(cls, biomodel_id):
     """
     Obtains SBML for the the Biomodel.
     :param str biomodel_id:
+    :return SBMLShim:
     """
     url = "http://www.ebi.ac.uk/biomodels-main/download?mid=%s" % biomodel_id
-    return te.loadSBMLModel(url).getSBML()
+    sbmlstr = te.loadSBMLModel(url).getSBML()
+    shim = SBMLShim(sbmlstr=sbmlstr)
+    shim._biomodel_id = biomodel_id
+    return shim
 
   def _getSpecies(self):
     speciess = {}
@@ -207,6 +212,9 @@ class SBMLShim(object):
       antimony_str += new_str
     sbmlstr = SBMLShim.createSBML(antimony_str)
     return sbmlstr
+
+  def getBiomodelId(self):
+    return self._biomodel_id
 
 
 if __name__ == '__main__':

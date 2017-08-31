@@ -8,7 +8,7 @@ import os.path
 ################################################
 # Classes that count pattern occurrences
 ################################################
-class BiomodelsIterator(object):
+class BiomodelIterator(object):
 
   def __init__(self, path):
     """
@@ -18,7 +18,6 @@ class BiomodelsIterator(object):
     """
     self._path = path
     self._idx = 0
-    self._cur_id = None
     with open(self._path, 'r') as fh:
       self._ids = fh.readlines()  # Biomodels Ids
 
@@ -31,15 +30,12 @@ class BiomodelsIterator(object):
     :raises StopIteration:
     """
     if self._idx < len(self._ids):
-      self._cur_id = (self._ids[self._idx]).replace('\n', '')
-      sbmlstr = SBMLShim.getSBMLForBiomodel(self._cur_id)
+      cur_id = (self._ids[self._idx]).replace('\n', '')
+      shim = SBMLShim.getShimForBiomodel(cur_id)
       self._idx += 1
-      return SBMLShim(sbmlstr=sbmlstr)
+      return shim
     else:
       raise StopIteration()
-
-  def getId(self):
-    return self._cur_id
      
 
 

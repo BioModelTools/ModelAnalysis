@@ -34,12 +34,12 @@ class TestSBMLShim(unittest.TestCase):
     for parameter in self.shim.getParameters():
       self.assertTrue(isinstance(parameter, libsbml.Parameter))
 
-  def testGetSBMLForBiomodel(self):
+  def testGetShimForBiomodel(self):
     if IGNORE_TEST:
       return
-    sbmlstr = SBMLShim.getSBMLForBiomodel(BIOMODEL)
-    shim = SBMLShim(sbmlstr=sbmlstr)
+    shim = SBMLShim.getShimForBiomodel(BIOMODEL)
     self.assertTrue(len(shim.getReactions()) > 0)
+    self.assertEqual(shim.getBiomodelId(), BIOMODEL)
 
   def testcreateSBML(self):
     if IGNORE_TEST:
