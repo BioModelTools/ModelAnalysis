@@ -1,10 +1,10 @@
 """
 Classes that count patterns in SBML models.
 Usage:
-   pattern = XPattern(ssbml)
+   pattern = XPattern(shim)
    pattern_count, total_count = pattern.run()
 """
-from simple_sbml import SimpleSBML
+from sbml_shim import SBMLShim
 import re
 import sys
 import os.path
@@ -21,12 +21,12 @@ class PatternCounter(object):
   from counter classes.
   """
 
-  def __init__(self, ssbml):
+  def __init__(self, shim):
     """
-    :param SimpleSBML ssbml: for model to count pattern
+    :param SBMLShim shim: for model to count pattern
     :param ModelPattern model_pattern:
     """
-    self._ssbml = ssbml
+    self._shim = shim
 
   def run(self):
     """
@@ -80,7 +80,7 @@ class ReactionPatternCounter(PatternCounter):
     :return int, int: 
         count of pattern occurrences, count of cases tested
     """
-    indicies = self._ssbml.getReactionIndicies()
+    indicies = self._shim.getReactionIndicies()
     reaction_count = len(indicies)
     pattern_count = 0
     for idx in indicies:
@@ -106,9 +106,9 @@ class ComplexFormationReactionPattern(ReactionPatternCounter):
     """
     cls = ComplexFormationReactionPattern
     reactants = [r.getSpecies() for
-                 r in self._ssbml.getReactants(reaction_idx)]
+                 r in self._shim.getReactants(reaction_idx)]
     products = [p.getSpecies() for
-                 p in self._ssbml.getProducts(reaction_idx)]
+                 p in self._shim.getProducts(reaction_idx)]
     result = False
     if len(reactants) > 1 and len(products) > 0:
       for product in products:
@@ -130,9 +130,9 @@ class ComplexDisassociationReactionPattern(ReactionPatternCounter):
     :return bool: True if the pattern is present
     """
     reactants = [r.getSpecies() for
-                 r in self._ssbml.getReactants(reaction_idx)]
+                 r in self._shim.getReactants(reaction_idx)]
     products = [p.getSpecies() for
-                 p in self._ssbml.getProducts(reaction_idx)]
+                 p in self._shim.getProducts(reaction_idx)]
     result = False
     for reactant in reactants:
       if self._jointSubstring(products, reactant) > 1:

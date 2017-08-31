@@ -4,7 +4,7 @@ Tests for PatternCounter
 import numpy as np
 from pattern_counter import PatternCounter, ReactionPatternCounter,  \
     ComplexFormationReactionPattern, ComplexDisassociationReactionPattern
-from simple_sbml import SimpleSBML
+from sbml_shim import SBMLShim
 #from util import createSBML, createReaction
 import unittest
 
@@ -24,18 +24,18 @@ class DummyReactionPattern(ReactionPatternCounter):
 class TestCounterClasses(unittest.TestCase):
 
   def setUp(self):
-    self.ssbml = SimpleSBML(filepath=TEST_FILE)
+    self.shim = SBMLShim(filepath=TEST_FILE)
     
   def testPatternCounter(self):
     if IGNORE_TEST:
       return
-    counter = DummyReactionPattern(self.ssbml)
-    self.assertIsNotNone(counter._ssbml)
+    counter = DummyReactionPattern(self.shim)
+    self.assertIsNotNone(counter._shim)
 
   def testReactionPatternCounter(self):
     if IGNORE_TEST:
       return
-    counter = DummyReactionPattern(self.ssbml)
+    counter = DummyReactionPattern(self.shim)
     reaction_count, pattern_count = counter.run()
     self.assertEqual(reaction_count, pattern_count)
 
@@ -45,7 +45,7 @@ class TestCounterClasses(unittest.TestCase):
 class TestPatterns(unittest.TestCase):
 
   def setUp(self):
-    self.ssbml = SimpleSBML(filepath=TEST_FILE)
+    self.shim = SBMLShim(filepath=TEST_FILE)
 
   def _testJointSubstring(self, substrings, string, expected):
     result = PatternCounter._jointSubstring(substrings, string)
@@ -63,9 +63,9 @@ class TestPatterns(unittest.TestCase):
 
   def _testFormationPattern(self, 
         reactants, products, expected_result):
-    ssbmlstr = SimpleSBML.createSBMLReaction(reactants, products)
-    ssbml = SimpleSBML(sbmlstr=ssbmlstr)
-    complex = ComplexFormationReactionPattern(ssbml)
+    shimstr = SBMLShim.createSBMLReaction(reactants, products)
+    shim = SBMLShim(sbmlstr=shimstr)
+    complex = ComplexFormationReactionPattern(shim)
     self.assertEqual(complex.isPattern(0), expected_result)
 
   def testComplexFormationReactionPattern(self):
@@ -80,9 +80,9 @@ class TestPatterns(unittest.TestCase):
 
   def _testDisassociatePattern(self, 
         reactants, products, expected_result):
-    ssbmlstr = SimpleSBML.createSBMLReaction(reactants, products)
-    ssbml = SimpleSBML(sbmlstr=ssbmlstr)
-    complex = ComplexDisassociationReactionPattern(ssbml)
+    shimstr = SBMLShim.createSBMLReaction(reactants, products)
+    shim = SBMLShim(sbmlstr=shimstr)
+    complex = ComplexDisassociationReactionPattern(shim)
     self.assertEqual(complex.isPattern(0), expected_result)
 
   def testComplexDisassociationReactionPattern(self):

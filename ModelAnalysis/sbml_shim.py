@@ -2,7 +2,7 @@
 Provides simplified, read-only access to an SBML model.
 Notes:
   Because of an apparent bug in libsbml, we cannot
-  pass a libsbml object across subroutine calls. SimpleSBML
+  pass a libsbml object across subroutine calls. SBMLShim
   provides the interface to libsbml.
 """
 import sys
@@ -11,7 +11,7 @@ import tellurium as te  # Must import tellurium before libsbml
 import libsbml
 
 
-class SimpleSBML(object):
+class SBMLShim(object):
   """
   Provides access to reactions, species, and parameters.
   """
@@ -124,7 +124,7 @@ class SimpleSBML(object):
     :param libsbml.Reaction reaction:
     """
     reaction = self._coerceToReaction(reaction)
-    cls = SimpleSBML
+    cls = SBMLShim
     reaction_str = ''
     base_length = len(reaction_str)
     for reference in self.getReactants(reaction):
@@ -205,7 +205,7 @@ class SimpleSBML(object):
     for spc in species:
       new_str = "\n%s = 1;" % spc
       antimony_str += new_str
-    sbmlstr = SimpleSBML.createSBML(antimony_str)
+    sbmlstr = SBMLShim.createSBML(antimony_str)
     return sbmlstr
 
 
