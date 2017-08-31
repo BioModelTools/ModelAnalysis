@@ -32,3 +32,9 @@ This project provides the following statistics for each model:
   - Complex formation: At least two reactants appear as a substring ofone product.
   - Complex disassociation: Two products, when concatenated, form one reactant.
   - Catalyzed reaction: One or more species appears as both a reactant and a product.
+- Fraction of annotated model elements for the following:
+  - species
+  - reaction
+  - parameters
+- Mean and standard deviation for reaction network paths from entry reaction to exit reaction
+- Number of compartments
