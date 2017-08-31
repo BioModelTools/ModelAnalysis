@@ -22,19 +22,25 @@ This project provides the following statistics for each model:
   - Functions
   - Other
 - Number of parameters
-- Fraction of reactions that contain the following patterns:
-  - Add moiety: Reactant is a substring of a product.
-  - Remove moiety: Product is a substring of a reactant.
-  - Transfer moiety: One product is a substring of a reactant and
-    another reactant appears as a product with the difference
-    between the first reactant and product.
-  - Add, remove, transfer Pi moiety: Looks for "p" at the beginning or end of a name.
-  - Complex formation: At least two reactants appear as a substring ofone product.
-  - Complex disassociation: Two products, when concatenated, form one reactant.
-  - Catalyzed reaction: One or more species appears as both a reactant and a product.
+- Model style
+  - Fraction of reactions that contain the following patterns:
+    - Add moiety: Reactant is a substring of a product.
+    - Remove moiety: Product is a substring of a reactant.
+    - Transfer moiety: One product is a substring of a reactant and
+      another reactant appears as a product with the difference
+      between the first reactant and product.
+    - Add, remove, transfer Pi moiety: Looks for "p" at the beginning or end of a name.
+    - Complex formation: At least two reactants appear as a substring ofone product.
+    - Complex disassociation: Two products, when concatenated, form one reactant.
+    - Catalyzed reaction: One or more species appears as both a reactant and a product.
+    - Numbered label
+    - Numbered constant corresponding to the label
 - Fraction of annotated model elements for the following:
   - species
   - reaction
   - parameters
-- Mean and standard deviation for reaction network paths from entry reaction to exit reaction
+- Reaction network
+  - Mean and standard deviation of path lengths
+  - Number of entry nodes
+  - Number of exit nodes
 - Number of compartments
