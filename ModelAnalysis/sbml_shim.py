@@ -63,6 +63,9 @@ class SBMLShim(object):
       speciess[species.getId()] = species
     return speciess
 
+  def getSpecies(self):
+    return self._species.keys()
+
   def _getReactions(self):
     """
     :param libsbml.Model:

@@ -3,11 +3,13 @@ Tests for BiomodelIterator
 """
 from biomodel_iterator import BiomodelIterator
 from sbml_shim import SBMLShim
+import os
 import unittest
 
 
 IGNORE_TEST = False
-TEST_FILE = "test_biomodel_iterator.dat"
+DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+TEST_FILE = os.path.join(DIRECTORY, "test_biomodel_iterator.dat")
 NUM_IDS = 2
 
 

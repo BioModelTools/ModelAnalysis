@@ -3,12 +3,14 @@ Tests for sbml_shim
 """
 import unittest
 import numpy as np
+import os
 from sbml_shim import SBMLShim
 import libsbml
 
 
 IGNORE_TEST = True
-TEST_FILE = "chemotaxis.xml"
+DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+TEST_FILE = os.path.join(DIRECTORY, "chemotaxis.xml")
 NUM_REACTIONS = 111
 NUM_PARAMETERS = 27
 MAX_REACTANTS = 10
