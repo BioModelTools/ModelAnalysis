@@ -42,11 +42,11 @@ class Statistic(object):
     raise RuntimeError("Not implemented. Must override.")
 
   @classmethod
-  def getNames(cls):
+  def getDoc(cls):
     """
     :return list-of-str: names of statistics
     """
-    return cls.statistic_names
+    return cls.statistic_doc
 
   @staticmethod
   def _findLeafSubclasses(klass):
@@ -107,6 +107,16 @@ class Statistic(object):
           last_range = combined_range
     return result
 
+  @staticmethod
+  def _addElementToListInDict(a_dict, key, value):
+    """
+    Adds an element to a list entry in a dictionary.
+    """
+    if not key in a_dict:
+      a_dict[key] = [value]
+    else:
+      a_dict[key].append(value)
+
 
 ################################################
 # Model statistics
@@ -115,22 +125,24 @@ class ModelStatistic(Statistic):
   """
   Computes statistics that apply to the entire model
   """
+  cls = Statistic
   NUM_REACTIONS = "Num_Reactions"
-  statistic_doc[NUM_REATIONS] = "Number of reactions in the model"
+  cls.statistic_doc[NUM_REACTIONS] = "Number of reactions in the model"
   NUM_PARAMETERS = "Num_Parameters"
-  statistic_doc[NUM_PARAMETERS] = "Number of parameters in the model"
+  cls.statistic_doc[NUM_PARAMETERS] = "Number of parameters in the model"
   NUM_SPECIES = "Num_Species"
-  statistic_doc[NUM_SPECIES] = "Number of species in the model"
+  cls.statistic_doc[NUM_SPECIES] = "Number of species in the model"
 
 
   def getStatistic(self):
     """
     :return dict:
     """
+    cls = self.__class__
     return   {
-              NUM_REACTIONS: len(self._shim.getReactionIndicies()),
-              NUM_PARAMETERS: len(self._shim.getParameterNames()),
-              NUM_SPECIES: len(self._shim.getSpecies()),
+              cls.NUM_REACTIONS: len(self._shim.getReactionIndicies()),
+              cls.NUM_PARAMETERS: len(self._shim.getParameterNames()),
+              cls.NUM_SPECIES: len(self._shim.getSpecies()),
              }
 
 
@@ -139,11 +151,10 @@ class ModelStatistic(Statistic):
 ################################################
 class ReactionStatistic(Statistic):
   """
-  Abstract class for collecting complex reaction statistics. Reaction statistics
-  are obtained by iterating across all reactions and then computing
-  aggregations of the results.
-  Classes that inherit must provide the following methods:
-    _getValues(dict, idx) - provides a scalar number for a reaction, where
+  Abstract class for computing reaction statistics that iterate across
+  reactions and compute aggregations of the results.
+  Classes that inherit must provide the following method:
+    _getValues(self, dict, idx) - provides a scalar number for a reaction, where
         dict is an initially empty dictionary, idx is the reaction index
   """
 
@@ -164,16 +175,6 @@ class ReactionStatistic(Statistic):
       result[std_key] = np.std(value_dict[key])
     return result
 
-  staticmethod
-  def _addElementToListInDict(a_dict, key, value):
-    """
-    Adds an element to a list entry in a dictionary.
-    """
-    if not key a_dict:
-      a_dict[key] = [value]
-    else:
-      a_dict[key].append(value)
-
   def _addValues(self, value_dict, idx):
     """
     :param dict value_dict:
@@ -183,48 +184,30 @@ class ReactionStatistic(Statistic):
     raise RuntimeError("Must override.")
 
 
-class SimpleReactionStatistic(Statistic):
-  """
-  Computes simple statistics for reactions.
-  """
-  NUM_REACTANTS = "Num_Reactants"
-  statistic_doc[NUM_REACTANTS] = "Mean (_mean) and std (_std) "  \
-      + "of the number of reactants in a reaction in the model"
-  NUM_PRODUCTS = "Num_Products"
-  statistic_doc[NUM_PRODUCTS] = "Mean (_mean) and std (_std) "  \
-      + "of the number of products in a reaction in the model"
-
-  def _addValues(self, value_dict, idx):
-    """
-    :param dict value_dict:
-    :param int idx: index of a reaction
-    :return dict: updates the value dictionary
-    """
-    cls = self.__class__
-    num_reactants = len([r.getSpecies() for
-                         r in self._shim.getReactants(reaction_idx)])
-    num_products = len([p.getSpecies() for
-                        p in self._shim.getProducts(reaction_idx)])
-    cls._addElementToListInDict(value_dict, cls.NUM_REACTANTS, num_reactants)
-    cls._addElementToListInDict(value_dict, cls.NUM_PRODUCTS, num_products)
-    return value_dict
-    
-
-class ComplexTransformationReactionStatistic(ReactionStatistic)
+class ComplexTransformationReactionStatistic(ReactionStatistic):
   """
   Determines if the reactants are combined in a way to be a substring
   of the product.
   """
+  cls = Statistic
   COMPLEX_FORMATION = "Complex_Formation"
-  statistic_doc[COMPLEX_FORMATION] = "Mean (_mean) and std (_std) "  \
+  cls.statistic_doc[COMPLEX_FORMATION] = "Mean (_mean) and std (_std) "  \
       + "of the number of reactions in which two reactants form a product"
   COMPLEX_DISASSOCIATION = "Complex_Disassociation"
-  statistic_doc[COMPLEX_DISASSOCIATION] = "Mean (_mean) and std (_std) "  \
+  cls.statistic_doc[COMPLEX_DISASSOCIATION] = "Mean (_mean) and std (_std) "  \
       + "of the number of reactions in which one reactant forms two or more products"
+  NUM_REACTANTS = "Num_Reactants"
+  cls.statistic_doc[NUM_REACTANTS] = "Mean (_mean) and std (_std) "  \
+      + "of the number of reactants in a reaction in the model"
+  NUM_PRODUCTS = "Num_Products"
+  cls.statistic_doc[NUM_PRODUCTS] = "Mean (_mean) and std (_std) "  \
+      + "of the number of products in a reaction in the model"
 
-  def _getValues(self, value_dict, reaction_idx):
+  def _addValues(self, value_dict, reaction_idx):
     """
     Looks for a combination of the reactants in a product.
+    :param value_dict: Dictionary with statistics name as key
+        and value is list of values for reactions
     :param int reaction_idx:
     :return value_dict:
     """
@@ -233,19 +216,23 @@ class ComplexTransformationReactionStatistic(ReactionStatistic)
                  r in self._shim.getReactants(reaction_idx)]
     products = [p.getSpecies() for
                  p in self._shim.getProducts(reaction_idx)]
+    num_reactants = len(reactants)
+    num_products = len(products)
     result = 0
     if len(reactants) > 1 and len(products) > 0:
       for product in products:
-        if self.__class__._jointSubstring(reactants, product) > 1:
+        if cls._jointSubstring(reactants, product) > 1:
           result = 1
           break
     cls._addElementToListInDict(value_dict, cls.COMPLEX_FORMATION, result)
     result = 0
     for reactant in reactants:
-      if self._jointSubstring(products, reactant) > 1:
+      if cls._jointSubstring(products, reactant) > 1:
         result = 1
         break
     cls._addElementToListInDict(value_dict, cls.COMPLEX_DISASSOCIATION, result)
+    cls._addElementToListInDict(value_dict, cls.NUM_REACTANTS, num_reactants)
+    cls._addElementToListInDict(value_dict, cls.NUM_PRODUCTS, num_products)
     return value_dict
 
 

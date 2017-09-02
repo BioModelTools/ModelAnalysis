@@ -3,10 +3,9 @@ Tests for Statistic
 """
 import numpy as np
 import os
-from statistic import Statistic,  \
+from statistic import Statistic, ModelStatistic, \
     ReactionStatistic, \
-    ComplexFormationReactionStatistic, \
-    ComplexDisassociationReactionStatistic
+    ComplexTransformationReactionStatistic
 from sbml_shim import SBMLShim
 #from util import createSBML, createReaction
 import unittest
@@ -19,11 +18,12 @@ TEST_FILE = os.path.join(DIRECTORY, "chemotaxis.xml")
 
 class DummyReactionStatistic(ReactionStatistic):
 
-  def _getValues(self, value_dict, idx):
+  def _addValues(self, value_dict, idx):
     if "Dummy" not in value_dict:
-      value_dict["Dummy"] = 1
+      value_dict["Dummy"] = [1]
     else:
       value_dict["Dummy"].append(1)
+    return value_dict
 
 
 class TestClass(object):
@@ -72,6 +72,7 @@ class TestStatistic(unittest.TestCase):
   def testGetAllStatistics(self):
     statistics = Statistic.getAllStatistics(self.shim)
     self.assertTrue(len(statistics.values()) > 0)
+    self.assertTrue("Complex_Disassociation_mean" in statistics)
 
 
 #############################
@@ -87,49 +88,43 @@ class TestReactionStatistic(unittest.TestCase):
       return
     reaction_statistic = DummyReactionStatistic(self.shim)
     result = reaction_statistic.getStatistic()
-    self.assertEqual(result.values(), [1.0, 0.0])
+    self.assertEqual(result["Dummy_mean"], 1.0)
+    self.assertEqual(result["Dummy_std"], 0.0)
 
-  def _testFormationStatistic(self, 
-        reactants, products, expected_result):
-    shimstr = SBMLShim.createSBMLReaction(reactants, products)
-    shim = SBMLShim(sbmlstr=shimstr)
-    complex = ComplexFormationReactionStatistic(shim)
-    self.assertEqual(complex._getValue(0), expected_result)
-
-  def testComplexFormationReactionStatistic(self):
-    if IGNORE_TEST:
-      return
-    self._testFormationStatistic(["A", "B"], ["AB"], 1)
-    self._testFormationStatistic(["B", "A"], ["AB"], 1)
-    self._testFormationStatistic(["A", "C"], ["AB"], 0)
-    self._testFormationStatistic(["A", "C", "B"], ["AB"], 1)
-    self._testFormationStatistic(["A", "B"], ["A_B"], 1)
-    self._testFormationStatistic(["B", "A"], ["A_B"], 1)
-
-  def _testComplexTransformationReactonStatistic(self, 
-        reactants, products, expected_result):
-    shimstr = SBMLShim.createSBMLReaction(reactants, products)
-    shim = SBMLShim(sbmlstr=shimstr)
+  def _testTransformStatistic(self, 
+        reactants, products, key, value):
+    """
+    :param list-of-str reactants:
+    :param list-of-str products:
+    :param str key: key in the result
+    :param float value: value in the result
+    """
+    sbmlstr = SBMLShim.createSBMLReaction(reactants, products)
+    shim = SBMLShim(sbmlstr=sbmlstr)
     complex = ComplexTransformationReactionStatistic(shim)
-## BUG. WRONG RETURN
-    self.assertEqual(complex._getValue(0), expected_result)
+    self.assertEqual(complex._addValues({}, 0)[key], [value])
 
   def testComplexDisassociationReactionStatistic(self):
     if IGNORE_TEST:
       return
-## BUG. WRONG THIRD ARGUMENT
-    self._testTransformStatistic(["AB"], ["B", "A"], 1)
-    self._testTransformStatistic(["AB"], ["A", "B"], 1)
-    self._testTransformStatistic(["AB"], ["A", "C"], 0)
-    self._testTransformStatistic(["AB"], ["A", "C", "B"], 1)
-    self._testTransformStatistic(["A_B"], ["A", "B"], 1)
-    self._testTransformStatistic(["A_B"], ["B", "A"], 1)
-    self._testTransformStatistic(["A", "B"], ["AB"], 1)
-    self._testTransformStatistic(["B", "A"], ["AB"], 1)
-    self._testTransformStatistic(["A", "C"], ["AB"], 0)
-    self._testTransformStatistic(["A", "C", "B"], ["AB"], 1)
-    self._testTransformStatistic(["A", "B"], ["A_B"], 1)
-    self._testTransformStatistic(["B", "A"], ["A_B"], 1)
+    key = "Complex_Disassociation"
+    self._testTransformStatistic(["AB"], ["B", "A"], key, 1)
+    self._testTransformStatistic(["AB"], ["A", "B"], key, 1)
+    self._testTransformStatistic(["AB"], ["A", "C"], key, 0)
+    self._testTransformStatistic(["AB"], ["A", "C", "B"], key, 1)
+    self._testTransformStatistic(["A_B"], ["A", "B"], key, 1)
+    self._testTransformStatistic(["A_B"], ["B", "A"], key, 1)
+    key = "Complex_Formation"
+    self._testTransformStatistic(["A", "B"], ["AB"], key, 1)
+    self._testTransformStatistic(["B", "A"], ["AB"], key, 1)
+    self._testTransformStatistic(["A", "C"], ["AB"], key, 0)
+    self._testTransformStatistic(["A", "C", "B"], ["AB"], key, 1)
+    self._testTransformStatistic(["A", "B"], ["A_B"], key, 1)
+    self._testTransformStatistic(["B", "A"], ["A_B"], key, 1)
+
+  def testGetDoc(self):
+    doc_dict = Statistic.getDoc()
+    self.assertTrue("Num_Parameters" in doc_dict)
    
 
 if __name__ == '__main__':
