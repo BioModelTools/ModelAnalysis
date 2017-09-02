@@ -19,11 +19,11 @@ TEST_FILE = os.path.join(DIRECTORY, "chemotaxis.xml")
 
 class DummyReactionStatistic(ReactionStatistic):
 
-  def _getValue(self, idx):
-    return 1
-  
-  def _getName(self):
-    return "Dummy"
+  def _getValues(self, value_dict, idx):
+    if "Dummy" not in value_dict:
+      value_dict["Dummy"] = 1
+    else:
+      value_dict["Dummy"].append(1)
 
 
 class TestClass(object):
@@ -106,22 +106,30 @@ class TestReactionStatistic(unittest.TestCase):
     self._testFormationStatistic(["A", "B"], ["A_B"], 1)
     self._testFormationStatistic(["B", "A"], ["A_B"], 1)
 
-  def _testDisassociateStatistic(self, 
+  def _testComplexTransformationReactonStatistic(self, 
         reactants, products, expected_result):
     shimstr = SBMLShim.createSBMLReaction(reactants, products)
     shim = SBMLShim(sbmlstr=shimstr)
-    complex = ComplexDisassociationReactionStatistic(shim)
+    complex = ComplexTransformationReactionStatistic(shim)
+## BUG. WRONG RETURN
     self.assertEqual(complex._getValue(0), expected_result)
 
   def testComplexDisassociationReactionStatistic(self):
     if IGNORE_TEST:
       return
-    self._testDisassociateStatistic(["AB"], ["B", "A"], 1)
-    self._testDisassociateStatistic(["AB"], ["A", "B"], 1)
-    self._testDisassociateStatistic(["AB"], ["A", "C"], 0)
-    self._testDisassociateStatistic(["AB"], ["A", "C", "B"], 1)
-    self._testDisassociateStatistic(["A_B"], ["A", "B"], 1)
-    self._testDisassociateStatistic(["A_B"], ["B", "A"], 1)
+## BUG. WRONG THIRD ARGUMENT
+    self._testTransformStatistic(["AB"], ["B", "A"], 1)
+    self._testTransformStatistic(["AB"], ["A", "B"], 1)
+    self._testTransformStatistic(["AB"], ["A", "C"], 0)
+    self._testTransformStatistic(["AB"], ["A", "C", "B"], 1)
+    self._testTransformStatistic(["A_B"], ["A", "B"], 1)
+    self._testTransformStatistic(["A_B"], ["B", "A"], 1)
+    self._testTransformStatistic(["A", "B"], ["AB"], 1)
+    self._testTransformStatistic(["B", "A"], ["AB"], 1)
+    self._testTransformStatistic(["A", "C"], ["AB"], 0)
+    self._testTransformStatistic(["A", "C", "B"], ["AB"], 1)
+    self._testTransformStatistic(["A", "B"], ["A_B"], 1)
+    self._testTransformStatistic(["B", "A"], ["A_B"], 1)
    
 
 if __name__ == '__main__':

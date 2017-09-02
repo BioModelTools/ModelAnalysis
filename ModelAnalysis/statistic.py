@@ -25,6 +25,7 @@ class Statistic(object):
   Abstract class for computing statistics. Leaf classes must implement
   gtStatistic. This class provides methods used by inheriting classes.
   """
+  statistic_doc = {}  # Names with descriptions. Added by leaf classes.
 
   def __init__(self, shim):
     """
@@ -39,6 +40,13 @@ class Statistic(object):
     :return dict: Dictionary of statistic name and its mean, std
     """
     raise RuntimeError("Not implemented. Must override.")
+
+  @classmethod
+  def getNames(cls):
+    """
+    :return list-of-str: names of statistics
+    """
+    return cls.statistic_names
 
   @staticmethod
   def _findLeafSubclasses(klass):
@@ -107,15 +115,22 @@ class ModelStatistic(Statistic):
   """
   Computes statistics that apply to the entire model
   """
+  NUM_REACTIONS = "Num_Reactions"
+  statistic_doc[NUM_REATIONS] = "Number of reactions in the model"
+  NUM_PARAMETERS = "Num_Parameters"
+  statistic_doc[NUM_PARAMETERS] = "Number of parameters in the model"
+  NUM_SPECIES = "Num_Species"
+  statistic_doc[NUM_SPECIES] = "Number of species in the model"
+
 
   def getStatistic(self):
     """
     :return dict:
     """
     return   {
-              "Num_Reactions": len(self._shim.getReactionIndicies()),
-              "Num_Parameters": len(self._shim.getParameterNames()),
-              "Num_Species": len(self._shim.getSpecies()),
+              NUM_REACTIONS: len(self._shim.getReactionIndicies()),
+              NUM_PARAMETERS: len(self._shim.getParameterNames()),
+              NUM_SPECIES: len(self._shim.getSpecies()),
              }
 
 
@@ -124,56 +139,96 @@ class ModelStatistic(Statistic):
 ################################################
 class ReactionStatistic(Statistic):
   """
-  Abstract class for collecting reaction statistics. Reaction statistics
+  Abstract class for collecting complex reaction statistics. Reaction statistics
   are obtained by iterating across all reactions and then computing
   aggregations of the results.
   Classes that inherit must provide the following methods:
-    _getValue(idx) - provides a scalar number for a reaction, where
-                   idx is the reaction index
-    _getName() - provides the name for the resulting statistic
+    _getValues(dict, idx) - provides a scalar number for a reaction, where
+        dict is an initially empty dictionary, idx is the reaction index
   """
 
   def getStatistic(self):
     """
-    Count the pattern for this model.
+    Compute statistics for the reactions
     :return dict:
     """
     indicies = self._shim.getReactionIndicies()
-    values = []
+    value_dict = {}
     for idx in indicies:
-      values.append(self._getValue(idx))
-    mean_value = np.mean(values)
-    mean_key = "%s_mean" % self._getName()
-    std_value = np.std(values)
-    std_key = "%s_std" % self._getName()
-    return {mean_key: mean_value, std_key: std_value}
+      value_dict = self._addValues(value_dict, idx)
+    result = {}
+    for key in value_dict.keys():
+      mean_key = "%s_mean" % key
+      result[mean_key] = np.mean(value_dict[key])
+      std_key = "%s_std" % key
+      result[std_key] = np.std(value_dict[key])
+    return result
 
-  def _getValue(self):
+  staticmethod
+  def _addElementToListInDict(a_dict, key, value):
     """
-    :return int/float:
+    Adds an element to a list entry in a dictionary.
     """
-    raise RuntimeError("Not implemented. Must override.")
+    if not key a_dict:
+      a_dict[key] = [value]
+    else:
+      a_dict[key].append(value)
 
-  def _getName(self):
+  def _addValues(self, value_dict, idx):
     """
-    :return str:
+    :param dict value_dict:
+    :param int idx: index of a reaction
+    :return dict: updates the value dictionary
     """
-    raise RuntimeError("Not implemented. Must override.")
+    raise RuntimeError("Must override.")
 
 
-class ComplexFormationReactionStatistic(ReactionStatistic):
+class SimpleReactionStatistic(Statistic):
+  """
+  Computes simple statistics for reactions.
+  """
+  NUM_REACTANTS = "Num_Reactants"
+  statistic_doc[NUM_REACTANTS] = "Mean (_mean) and std (_std) "  \
+      + "of the number of reactants in a reaction in the model"
+  NUM_PRODUCTS = "Num_Products"
+  statistic_doc[NUM_PRODUCTS] = "Mean (_mean) and std (_std) "  \
+      + "of the number of products in a reaction in the model"
+
+  def _addValues(self, value_dict, idx):
+    """
+    :param dict value_dict:
+    :param int idx: index of a reaction
+    :return dict: updates the value dictionary
+    """
+    cls = self.__class__
+    num_reactants = len([r.getSpecies() for
+                         r in self._shim.getReactants(reaction_idx)])
+    num_products = len([p.getSpecies() for
+                        p in self._shim.getProducts(reaction_idx)])
+    cls._addElementToListInDict(value_dict, cls.NUM_REACTANTS, num_reactants)
+    cls._addElementToListInDict(value_dict, cls.NUM_PRODUCTS, num_products)
+    return value_dict
+    
+
+class ComplexTransformationReactionStatistic(ReactionStatistic)
   """
   Determines if the reactants are combined in a way to be a substring
   of the product.
   """
-  NAME = "Complex_Formation"
+  COMPLEX_FORMATION = "Complex_Formation"
+  statistic_doc[COMPLEX_FORMATION] = "Mean (_mean) and std (_std) "  \
+      + "of the number of reactions in which two reactants form a product"
+  COMPLEX_DISASSOCIATION = "Complex_Disassociation"
+  statistic_doc[COMPLEX_DISASSOCIATION] = "Mean (_mean) and std (_std) "  \
+      + "of the number of reactions in which one reactant forms two or more products"
 
-  def _getValue(self, reaction_idx):
+  def _getValues(self, value_dict, reaction_idx):
     """
     Looks for a combination of the reactants in a product.
     :param int reaction_idx:
-    :return bool: 1 if the pattern is present; else 0
+    :return value_dict:
     """
+    cls = self.__class__
     reactants = [r.getSpecies() for
                  r in self._shim.getReactants(reaction_idx)]
     products = [p.getSpecies() for
@@ -184,37 +239,14 @@ class ComplexFormationReactionStatistic(ReactionStatistic):
         if self.__class__._jointSubstring(reactants, product) > 1:
           result = 1
           break
-    return result
-
-  def _getName(self):
-    return self.__class__.NAME
-
-
-class ComplexDisassociationReactionStatistic(ReactionStatistic):
-  """
-  Determines if one or more reactants are decomposed into products
-  """
-  NAME = "Complex_Disassociation"
-
-  def _getValue(self, reaction_idx):
-    """
-    Looks for a combination of the product in a reactant.
-    :param int reaction_idx:
-    :return bool: 1 if the pattern is present; else 0
-    """
-    reactants = [r.getSpecies() for
-                 r in self._shim.getReactants(reaction_idx)]
-    products = [p.getSpecies() for
-                 p in self._shim.getProducts(reaction_idx)]
+    cls._addElementToListInDict(value_dict, cls.COMPLEX_FORMATION, result)
     result = 0
     for reactant in reactants:
       if self._jointSubstring(products, reactant) > 1:
         result = 1
         break
-    return result
-
-  def _getName(self):
-    return self.__class__.NAME
+    cls._addElementToListInDict(value_dict, cls.COMPLEX_DISASSOCIATION, result)
+    return value_dict
 
 
 if __name__ == '__main__':
