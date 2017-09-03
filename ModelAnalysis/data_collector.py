@@ -9,8 +9,11 @@
 #   Progress report
 #   Writes CSV with variable descriptions
 
-import statistic
+from biomodel_iterator import BiomodelIterator
+from statistic import Statistic
+
 import os
+import pandas as pd
 
 REPORT_INTERVAL = 1  # Number of Biomodels between writing a status report
 ROOT_DIRECTORY = os.path.dirname(
@@ -19,6 +22,7 @@ DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, "Data")
 IN_PATH = os.path.join(DATA_DIRECTORY, "all_models.dat")
 OT_PATH_DATA = os.path.join(DATA_DIRECTORY, "all_statistics.csv")
 OT_PATH_DOC = os.path.join(DATA_DIRECTORY, "variables.csv")
+IS_MAIN = __name__ == '__main__'
 
 
 class DataCollector(object):
@@ -37,10 +41,46 @@ class DataCollector(object):
     self._in_path = in_path
     self._ot_path_data = ot_path_data
     self._ot_path_doc = ot_path_doc
-    if os.path.isfile(self._ot_path_data):
-      with open(self
-   
 
-if __name__ == '__main__':
+  def _getBiomodelIterator(self):
+    """
+    Finds the set of Biomodel IDs that have already been written
+    :return BiomodelIterator:
+    """
+    excludes = None
+    if os.path.isfile(self._ot_path_data):
+      try:
+        df = pd.read_csv(self._ot_data_path)
+        self._excludes = [id for id in df['Biomodel_Id']]
+      except:
+        pass
+    self._biter = BiomodelIterator(self._in_path, excludes=excludes)
+
+  def run(self):
+    """
+    Compute the statistics
+    """
+    biter = self._getBiomodelIterator()
+    report_count = REPORT_INTERVAL
+    df = pd.DataFrame()
+    for shim in biter:
+      df.append(Statistic.getAllStatistics(shim), ignore_index=True)
+      if IS_MAIN:
+        report_count += -1
+        if report_count < 1:
+          df.to_csv(self.ot_path_data)
+          print ("Completed Biomodel ID %s." % shim.getBiomodelId())
+          report_count = REPORT_INTERVAL
+   df.to_csv(self._ot_path_data)
+   doc_dict = {
+               "Column": Statistic.getDoc().keys(),
+               "Description": Statistic.getDoc().values(),
+              }
+   pd.DataFrame(doc_dict, ignore_index=True).to_csv(self._ot_path_doc)
+   if IS_MAIN:
+      print ("Done!")
+
+
+if IS_MAIN:
   collector = DataCollector()
   collector.run()
