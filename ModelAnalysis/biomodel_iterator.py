@@ -10,16 +10,22 @@ import os.path
 ################################################
 class BiomodelIterator(object):
 
-  def __init__(self, path):
+  def __init__(self, path, excludes=None):
     """
-    :param str path: path to a file containing a list of BioModels to process
+    :param str path: path to a file containing a list of Biomodel IDs to process
       The file should contain a list of BioModels identifiers,
       one per line.
+    :param list-of-str excludes: Biomodel IDs to exclude
     """
     self._path = path
     self._idx = 0
     with open(self._path, 'r') as fh:
-      self._ids = fh.readlines()  # Biomodels Ids
+      ids = fh.readlines()  # Biomodels Ids
+    if excludes is None:
+      excludes = []
+    pruned_ids = [id.replace('\n', '') for id in ids]
+    self._ids = [id.replace('\n', '') for id in pruned_ids
+                 if not id in excludes]
 
   def __iter__(self):
     return self
@@ -30,8 +36,7 @@ class BiomodelIterator(object):
     :raises StopIteration:
     """
     if self._idx < len(self._ids):
-      cur_id = (self._ids[self._idx]).replace('\n', '')
-      shim = SBMLShim.getShimForBiomodel(cur_id)
+      shim = SBMLShim.getShimForBiomodel(self._ids[self._idx])
       self._idx += 1
       return shim
     else:
