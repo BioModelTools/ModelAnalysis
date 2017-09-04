@@ -145,7 +145,33 @@ class ModelStatistic(Statistic):
               cls.NUM_REACTIONS: len(self._shim.getReactionIndicies()),
               cls.NUM_PARAMETERS: len(self._shim.getParameterNames()),
               cls.NUM_SPECIES: len(self._shim.getSpecies()),
-              cls.BIOMODEL_ID: self._shim.getBiomodelId()
+              cls.BIOMODEL_ID: self._shim.getBiomodelId(),
+             }
+
+
+class ErrorStatistic(Statistic):
+  """
+  Minimal statistics calculated if there is an error in the model
+  """
+  cls = Statistic
+  BIOMODEL_ID = "Biomodel_Id"
+  cls.statistic_doc[BIOMODEL_ID] = "BioModels ID for the the model (or None)"
+  IS_EXCEPTION = "Is_Exception"
+  cls.statistic_doc[IS_EXCEPTION] = "Did an exception occur reading the model"
+  EXCEPTION = "Exception"
+  cls.statistic_doc[EXCEPTION] = "Text of the exception that occurred reading the model, if any"
+
+
+  def getStatistic(self):
+    """
+    :return dict:
+    """
+    cls = self.__class__
+    exception = self._shim.getException()
+    return   {
+              cls.IS_EXCEPTION: exception is not None,
+              cls.EXCEPTION: str(exception),
+              cls.BIOMODEL_ID: self._shim.getBiomodelId(),
              }
 
 

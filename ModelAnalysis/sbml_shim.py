@@ -25,23 +25,33 @@ class SBMLShim(object):
         if there are errors in the document
     :raises IOError: Error encountered reading the SBML document
     :raises ValueError: if filepath and sbmlstr are both None
+    Notes: If an error is occurred reading the SBML, a minimalist shim
+    is still created if is_ignore_errors == True.
     """
-    self._reader = libsbml.SBMLReader()
+    reader = libsbml.SBMLReader()
+    # Acquire the model if there is one
     if filepath is not None:
       self._filepath = filepath
-      self._document = self._reader.readSBML(self._filepath)
+      self._document = reader.readSBML(self._filepath)
     elif sbmlstr is not None:
-      self._document = self._reader.readSBMLFromString(sbmlstr)
+      self._document = reader.readSBMLFromString(sbmlstr)
     else:
-      raise ValueError("Must have an SBML source!")
-    if (self._document.getNumErrors() > 0) and not is_ignore_errors:
-      raise IOError("Errors in SBML document\n%s" 
-          % self._document.printErrors())
-    self._model = self._document.getModel()
-    self._reactions = self._getReactions()
-    self._parameters = self._getParameters()  # dict with key=name
-    self._species = self._getSpecies()  # dict with key=name
+      # No model is present
+      if is_ignore_errors:
+        self._document = None
+      else:
+        raise ValueError("Must have an SBML source!")
     self._biomodel_id = None
+    self._exception = None  # Exception when reading the model
+    if self._document is not None:
+      if (self._document.getNumErrors() > 0) and not is_ignore_errors:
+        raise IOError("Errors in SBML document\n%s" 
+            % self._document.printErrors())
+      self._model = self._document.getModel()
+      if self._model is not None:
+        self._reactions = self._getReactions()
+        self._parameters = self._getParameters()  # dict with key=name
+        self._species = self._getSpecies()  # dict with key=name
 
   @classmethod
   def getShimForBiomodel(cls, biomodel_id):
@@ -51,10 +61,17 @@ class SBMLShim(object):
     :return SBMLShim:
     """
     url = "http://www.ebi.ac.uk/biomodels-main/download?mid=%s" % biomodel_id
-    sbmlstr = te.loadSBMLModel(url).getSBML()
-    shim = SBMLShim(sbmlstr=sbmlstr)
+    try:
+      sbmlstr = te.loadSBMLModel(url).getSBML()
+      shim = SBMLShim(sbmlstr=sbmlstr)
+    except Exception as err:
+      shim = SBMLShim(sbmlstr="", is_ignore_errors=True)  # Minimal shim
+      shim._exception = err
     shim._biomodel_id = biomodel_id
     return shim
+
+  def getException(self):
+    return self._exception
 
   def _getSpecies(self):
     speciess = {}
@@ -195,7 +212,8 @@ class SBMLShim(object):
     :return str SBML:
     """
     rr = te.loada(antimony_str)
-    return rr.getSBML()
+    sbmlstr = rr.getSBML()
+    return sbmlstr
   
   @staticmethod
   # Creates a reaction

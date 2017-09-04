@@ -8,7 +8,7 @@ from sbml_shim import SBMLShim
 import libsbml
 
 
-IGNORE_TEST = True
+IGNORE_TEST = False
 DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 TEST_FILE = os.path.join(DIRECTORY, "chemotaxis.xml")
 NUM_REACTIONS = 111
@@ -35,6 +35,14 @@ class TestSBMLShim(unittest.TestCase):
     self.assertEqual(len(self.shim.getParameters()), NUM_PARAMETERS)
     for parameter in self.shim.getParameters():
       self.assertTrue(isinstance(parameter, libsbml.Parameter))
+
+  def testConstructorWithError(self):
+    if IGNORE_TEST:
+      return
+    shim = SBMLShim(sbmlstr="", is_ignore_errors=True)
+    self.assertIsNone(shim._exception)
+    with self.assertRaises(Exception):
+      SBMLShim(sbmlstr="")
 
   def testGetShimForBiomodel(self):
     if IGNORE_TEST:

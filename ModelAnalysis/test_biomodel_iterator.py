@@ -7,7 +7,7 @@ import os
 import unittest
 
 
-IGNORE_TEST = True
+IGNORE_TEST = False
 DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 TEST_FILE = os.path.join(DIRECTORY, "test_biomodel_iterator.dat")
 NUM_IDS = 2

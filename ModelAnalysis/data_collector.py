@@ -10,12 +10,12 @@
 #   Writes CSV with variable descriptions
 
 from biomodel_iterator import BiomodelIterator
-from statistic import Statistic
+from statistic import Statistic, ErrorStatistic
 
 import os
 import pandas as pd
 
-REPORT_INTERVAL = 1  # Number of Biomodels between writing a status report
+REPORT_INTERVAL = 10  # Number of Biomodels between writing a status report
 ROOT_DIRECTORY = os.path.dirname(
     os.path.dirname(os.path.realpath(__file__)))
 DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, "Data")
@@ -64,19 +64,23 @@ class DataCollector(object):
     report_count = REPORT_INTERVAL
     df = pd.DataFrame()
     for shim in biter:
-      df.append(Statistic.getAllStatistics(shim), ignore_index=True)
+      if shim.getException() is None:
+        stat_dict = Statistic.getAllStatistics(shim)
+      else:
+        stat_dict = ErrorStatistic(shim).getStatistic()
+      df = df.append(stat_dict, ignore_index=True)
       if IS_MAIN:
         report_count += -1
         if report_count < 1:
-          df.to_csv(self.ot_path_data)
+          df.to_csv(self._ot_path_data)
           print ("Completed Biomodel ID %s." % shim.getBiomodelId())
           report_count = REPORT_INTERVAL
-    df.to_csv(self._ot_path_data)
+    df.to_csv(self._ot_path_data, index=False)
     doc_dict = {
                 "Column": Statistic.getDoc().keys(),
                 "Description": Statistic.getDoc().values(),
                }
-    pd.DataFrame(doc_dict).to_csv(self._ot_path_doc)
+    pd.DataFrame(doc_dict).to_csv(self._ot_path_doc, index=False)
     if IS_MAIN:
       print ("Done!")
 
