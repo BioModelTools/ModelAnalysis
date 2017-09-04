@@ -54,7 +54,7 @@ class DataCollector(object):
         self._excludes = [id for id in df['Biomodel_Id']]
       except:
         pass
-    self._biter = BiomodelIterator(self._in_path, excludes=excludes)
+    return BiomodelIterator(self._in_path, excludes=excludes)
 
   def run(self):
     """
@@ -71,13 +71,13 @@ class DataCollector(object):
           df.to_csv(self.ot_path_data)
           print ("Completed Biomodel ID %s." % shim.getBiomodelId())
           report_count = REPORT_INTERVAL
-   df.to_csv(self._ot_path_data)
-   doc_dict = {
-               "Column": Statistic.getDoc().keys(),
-               "Description": Statistic.getDoc().values(),
-              }
-   pd.DataFrame(doc_dict, ignore_index=True).to_csv(self._ot_path_doc)
-   if IS_MAIN:
+    df.to_csv(self._ot_path_data)
+    doc_dict = {
+                "Column": Statistic.getDoc().keys(),
+                "Description": Statistic.getDoc().values(),
+               }
+    pd.DataFrame(doc_dict).to_csv(self._ot_path_doc)
+    if IS_MAIN:
       print ("Done!")
 
 
