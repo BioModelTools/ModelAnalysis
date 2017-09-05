@@ -1,0 +1,11 @@
+Column,Description
+Exception,"Text of the exception that occurred reading the model, if any"
+Num_Parameters,Number of parameters in the model
+Complex_Disassociation,Mean (_mean) and std (_std) of the number of reactions in which one reactant forms two or more products
+Num_Reactants,Mean (_mean) and std (_std) of the number of reactants in a reaction in the model
+Num_Reactions,Number of reactions in the model
+Is_Exception,Did an exception occur reading the model
+Num_Species,Number of species in the model
+Biomodel_Id,BioModels ID for the the model (or None)
+Complex_Formation,Mean (_mean) and std (_std) of the number of reactions in which two reactants form a product
+Num_Products,Mean (_mean) and std (_std) of the number of products in a reaction in the model

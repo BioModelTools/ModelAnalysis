@@ -5,6 +5,7 @@ Notes:
   pass a libsbml object across subroutine calls. SBMLShim
   provides the interface to libsbml.
 """
+import urllib2
 import sys
 import os.path
 import tellurium as te  # Must import tellurium before libsbml
@@ -62,7 +63,8 @@ class SBMLShim(object):
     """
     url = "http://www.ebi.ac.uk/biomodels-main/download?mid=%s" % biomodel_id
     try:
-      sbmlstr = te.loadSBMLModel(url).getSBML()
+      response = urllib2.urlopen(url)
+      sbmlstr = response.read()
       shim = SBMLShim(sbmlstr=sbmlstr)
     except Exception as err:
       shim = SBMLShim(sbmlstr="", is_ignore_errors=True)  # Minimal shim
