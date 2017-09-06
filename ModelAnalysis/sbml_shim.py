@@ -29,6 +29,7 @@ class SBMLShim(object):
     Notes: If an error is occurred reading the SBML, a minimalist shim
     is still created if is_ignore_errors == True.
     """
+    self._is_ignore_errors = is_ignore_errors
     reader = libsbml.SBMLReader()
     # Acquire the model if there is one
     if filepath is not None:
@@ -38,21 +39,28 @@ class SBMLShim(object):
       self._document = reader.readSBMLFromString(sbmlstr)
     else:
       # No model is present
-      if is_ignore_errors:
+      if self._is_ignore_errors:
         self._document = None
       else:
         raise ValueError("Must have an SBML source!")
     self._biomodel_id = None
     self._exception = None  # Exception when reading the model
     if self._document is not None:
-      if (self._document.getNumErrors() > 0) and not is_ignore_errors:
-        raise IOError("Errors in SBML document\n%s" 
-            % self._document.printErrors())
+      self._checkErrors()
       self._model = self._document.getModel()
       if self._model is not None:
         self._reactions = self._getReactions()
         self._parameters = self._getParameters()  # dict with key=name
         self._species = self._getSpecies()  # dict with key=name
+ 
+  def _checkErrors(self):
+    if (self._document.getNumErrors() > 0) and not self._is_ignore_errors:
+      for e in (self._document.getError(n) for n in range(doc.getNumErrors())):
+        if e.getSeverity() == libsbml.LIBSBML_SEV_ERROR or e.getSeverity() == libsbml.LIBSBML_SEV_FATAL:
+            raise IOError("Errors in SBML document\n%s" % e.getMessage())
+
+  def getNumModelErrors(self):
+    return self._document.getNumErrors()
 
   @classmethod
   def getShimForBiomodel(cls, biomodel_id):

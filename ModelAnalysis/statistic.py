@@ -160,6 +160,8 @@ class ErrorStatistic(Statistic):
   cls.statistic_doc[IS_EXCEPTION] = "Did an exception occur reading the model"
   EXCEPTION = "Exception"
   cls.statistic_doc[EXCEPTION] = "Text of the exception that occurred reading the model, if any"
+  NUM_MODEL_ERRORS = "Num_Model_Errors"
+  cls.statistic_doc[NUM_MODEL_ERRORS] = "Number of Non-Fatal SBML errors in the model"
 
 
   def getStatistic(self):
@@ -172,6 +174,7 @@ class ErrorStatistic(Statistic):
               cls.IS_EXCEPTION: exception is not None,
               cls.EXCEPTION: str(exception),
               cls.BIOMODEL_ID: self._shim.getBiomodelId(),
+              cls.NUM_MODEL_ERRORS: self._shim.getNumModelErrors(),
              }
 
 
