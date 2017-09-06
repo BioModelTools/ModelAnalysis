@@ -45,6 +45,9 @@ class SBMLShim(object):
         raise ValueError("Must have an SBML source!")
     self._biomodel_id = None
     self._exception = None  # Exception when reading the model
+    self._reactions = []
+    self._parameters = []
+    self._species = []
     if self._document is not None:
       self._checkErrors()
       self._model = self._document.getModel()
@@ -58,9 +61,30 @@ class SBMLShim(object):
       for e in (self._document.getError(n) for n in range(doc.getNumErrors())):
         if e.getSeverity() == libsbml.LIBSBML_SEV_ERROR or e.getSeverity() == libsbml.LIBSBML_SEV_FATAL:
             raise IOError("Errors in SBML document\n%s" % e.getMessage())
+ 
+  @staticmethod 
+  def _buildStatement(base, *args):
+    """
+    Constructs a statement with variable arguments.
+    :param str base: base of statement
+    :param tuple *args: arguments
+    """
+    statement = "%s(" % base
+    for arg in args:
+      statement = "%s, %s" % (statement, arg)
+    statement = "%s)" % statement
+    return statement
 
-  def getNumModelErrors(self):
-    return self._document.getNumErrors()
+  def execFunction(self, func, attribute="document", *args):
+    """
+    Executes a function in libsbml.document or libsbml.model.
+    :param str func: function to execute
+    :param tuple args:
+    :param str attribute: either "document" or "model"
+    """
+    base = "self._%s.%s" % (attribute, func)
+    statement = self.__class__._buildStatement(base, *args)
+    return eval(statement)
 
   @classmethod
   def getShimForBiomodel(cls, biomodel_id):

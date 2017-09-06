@@ -87,6 +87,13 @@ class TestSBMLShim(unittest.TestCase):
     reaction_indicies = shim.getReactionIndicies()
     self.assertEqual(len(reaction_indicies), 2)
 
+  def testExecFunction(self):
+    num_errors = self.shim.execFunction("getNumErrors")
+    self.assertEqual(num_errors, 0)
+    num_params = self.shim.execFunction("getNumParameters",
+        attribute="model")
+    self.assertGreater(num_params, 0)
+
 
 if __name__ == '__main__':
   unittest.main()
