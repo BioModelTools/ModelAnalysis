@@ -174,8 +174,8 @@ class ErrorStatistic(Statistic):
               cls.IS_EXCEPTION: exception is not None,
               cls.EXCEPTION: str(exception),
               cls.BIOMODEL_ID: self._shim.getBiomodelId(),
-              cls.NUM_MODEL_ERRORS: self._shim.execAttribute(
-                  "getNumErrors")
+              cls.NUM_MODEL_ERRORS: self._shim.execFunction(
+                  "checkConsistency")
              }
 
 

@@ -58,7 +58,7 @@ class SBMLShim(object):
  
   def _checkErrors(self):
     if (self._document.getNumErrors() > 0) and not self._is_ignore_errors:
-      for e in (self._document.getError(n) for n in range(doc.getNumErrors())):
+      for e in (self._document.getError(n) for n in range(self._document.getNumErrors())):
         if e.getSeverity() == libsbml.LIBSBML_SEV_ERROR or e.getSeverity() == libsbml.LIBSBML_SEV_FATAL:
             raise IOError("Errors in SBML document\n%s" % e.getMessage())
  
