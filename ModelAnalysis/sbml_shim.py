@@ -93,7 +93,7 @@ class SBMLShim(object):
     :param str biomodel_id:
     :return SBMLShim:
     """
-    url = "http://www.ebi.ac.uk/biomodels-main/download?mid=%s" % biomodel_id
+    url = "http://biomodels.caltech.edu/download?mid=%s" % biomodel_id
     try:
       response = urllib2.urlopen(url)
       sbmlstr = response.read()
