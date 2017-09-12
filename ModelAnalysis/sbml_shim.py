@@ -99,6 +99,7 @@ class SBMLShim(object):
       sbmlstr = response.read()
       shim = SBMLShim(sbmlstr=sbmlstr)
     except Exception as err:
+      import pdb; pdb.set_trace()
       shim = SBMLShim(sbmlstr="", is_ignore_errors=True)  # Minimal shim
       shim._exception = err
     shim._biomodel_id = biomodel_id

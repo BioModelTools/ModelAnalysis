@@ -10,6 +10,7 @@ Note that all leaf classes are assumed to be non-abstract statistics classes
 that are to be instantiated.
 """
 from sbml_shim import SBMLShim
+from dcstring import DCString
 
 import numpy as np
 import re
@@ -208,6 +209,17 @@ class ReactionStatistic(Statistic):
       result[std_key] = np.std(value_dict[key])
     return result
 
+  def _setInstanceVariables(self, idx):
+    """
+    :param int idx: reaction index
+    """
+    self._reactants = [r.getSpecies() for
+                       r in self._shim.getReactants(idx)]
+    self._num_reactants = len(self._reactants)
+    self._products = [p.getSpecies() for
+                      p in self._shim.getProducts(idx)]
+    self._num_products = len(self._products)
+
   def _addValues(self, value_dict, idx):
     """
     :param dict value_dict:
@@ -245,27 +257,70 @@ class ComplexTransformationReactionStatistic(ReactionStatistic):
     :return value_dict:
     """
     cls = self.__class__
-    reactants = [r.getSpecies() for
-                 r in self._shim.getReactants(reaction_idx)]
-    products = [p.getSpecies() for
-                 p in self._shim.getProducts(reaction_idx)]
-    num_reactants = len(reactants)
-    num_products = len(products)
+    self._setInstanceVariables(reaction_idx)
     result = 0
-    if len(reactants) > 1 and len(products) > 0:
-      for product in products:
-        if cls._jointSubstring(reactants, product) > 1:
+    if self._num_reactants > 1 and self._num_products > 0:
+      for product in self._products:
+        if cls._jointSubstring(self._reactants, product) > 1:
           result = 1
           break
     cls._addElementToListInDict(value_dict, cls.COMPLEX_FORMATION, result)
     result = 0
-    for reactant in reactants:
-      if cls._jointSubstring(products, reactant) > 1:
+    for reactant in self._reactants:
+      if cls._jointSubstring(self._products, reactant) > 1:
         result = 1
         break
     cls._addElementToListInDict(value_dict, cls.COMPLEX_DISASSOCIATION, result)
-    cls._addElementToListInDict(value_dict, cls.NUM_REACTANTS, num_reactants)
-    cls._addElementToListInDict(value_dict, cls.NUM_PRODUCTS, num_products)
+    cls._addElementToListInDict(value_dict, cls.NUM_REACTANTS, self._num_reactants)
+    cls._addElementToListInDict(value_dict, cls.NUM_PRODUCTS, self._num_products)
+    return value_dict
+
+
+class MoietyReactionStatistic(ReactionStatistic):
+  """
+  Determines if there is a moiety that's being transferred between reactants.
+  """
+  cls = Statistic
+  MOIETY_TRANSFER = "Moiety_Transfer"
+  cls.statistic_doc[MOIETY_TRANSFER] = "Mean (_mean) and std (_std) "  \
+      + "of the number of reactions in a moiety is transferred between reactants"
+
+  def _addValues(self, value_dict, reaction_idx):
+    """
+    Example: TWp + R => TW + Rp
+    Required conditions:
+      1. Number of reactants equals the number of products is 2.
+      2. One product (primary) is a discontiguous substring of a reactant (primary)
+      3. The other reactant (secondary) is a discontiguous substring of the other product (secondary)
+      4. The difference string in #2 is a substring of the product in #3.
+    :param value_dict: Dictionary with statistics name as key
+        and value is list of values for reactions
+    :param int reaction_idx:
+    :return value_dict:
+    """
+    # TEMPORARY WHILE DEBUGGING
+    return value_dict
+    self._setInstanceVariables(reaction_idx)
+    cls = self.__class__
+    result = 0
+    if (self._num_reactants == self._num_products) and (self._num_reactants == 2):
+      for product in self._products:
+        for reactant in self._reactants:
+          primary = DCString(reactant, product )
+          if not primary.isPresent():
+            continue
+          p_product = product
+          p_reactant = reactant
+          s_product = set(self._products).difference(p_product)[0]
+          s_reactant = set(self._reactants).difference(p_reactant)[0]
+          secondary = DCString(s_product, s_reactant)
+          if not secondary.isPresent():
+            continue
+          if primary.diff() != secondary.diff():
+            continue
+          result = 1
+          break
+    cls._addElementToListInDict(value_dict, cls.MOIETY_TRANSFER, result)
     return value_dict
 
 

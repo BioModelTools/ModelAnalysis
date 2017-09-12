@@ -75,7 +75,7 @@ class TestStatistic(unittest.TestCase):
     self.assertTrue("Complex_Disassociation_mean" in statistics)
 
   def testStatisticError(self):
-    shim = SBMLShim.getShimForBiomodel("BIOMD000000020")
+    shim = SBMLShim.getShimForBiomodel("BIOMD0000000020")
     statistics = Statistic.getAllStatistics(self.shim)
     self.assertTrue(len(statistics.keys()) > 10)
 
