@@ -133,8 +133,6 @@ class ModelStatistic(Statistic):
   cls.statistic_doc[NUM_PARAMETERS] = "Number of parameters in the model"
   NUM_SPECIES = "Num_Species"
   cls.statistic_doc[NUM_SPECIES] = "Number of species in the model"
-  BIOMODEL_ID = "Biomodel_Id"
-  cls.statistic_doc[BIOMODEL_ID] = "BioModels ID for the the model (or None)"
 
 
   def getStatistic(self):
@@ -146,7 +144,6 @@ class ModelStatistic(Statistic):
               cls.NUM_REACTIONS: len(self._shim.getReactionIndicies()),
               cls.NUM_PARAMETERS: len(self._shim.getParameterNames()),
               cls.NUM_SPECIES: len(self._shim.getSpecies()),
-              cls.BIOMODEL_ID: self._shim.getBiomodelId(),
              }
 
 

@@ -127,6 +127,13 @@ class TestReactionStatistic(unittest.TestCase):
     self._testTransformStatistic(["A", "B"], ["A_B"], key, 1)
     self._testTransformStatistic(["B", "A"], ["A_B"], key, 1)
 
+  def testReactionStatisticError(self):
+    #if IGNORE_TEST:
+    #  return
+    shim = SBMLShim.getShimForBiomodel("BIOMD0000000020")
+    statistics = Statistic.getAllStatistics(shim)
+    self.assertEqual(statistics["Num_Reactions"], 0)
+
   def testGetDoc(self):
     doc_dict = Statistic.getDoc()
     self.assertTrue("Num_Parameters" in doc_dict)
